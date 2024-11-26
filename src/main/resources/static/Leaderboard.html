@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Leaderboard</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .leaderboard-table th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+
+        .leaderboard-table tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+
+        .leaderboard-table tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .connection-status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .connected {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+
+        .disconnected {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Real-Time Vocabulary Quiz</h1>
+    <h2> Live Leaderboard</h2>
+    <h3 id="quizId">Quiz ID: Error </h3>
+    <div id="status" class="connection-status disconnected">Disconnected</div>
+
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>User Name</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+            <!-- Leaderboard data will be inserted here -->
+        </tbody>
+    </table>
+    <div>
+        <br>
+        Last updated: <span id="lastSync">N/A</span>
+        <br>
+        Current time: <span id="timer">0</span>
+    </div>
+
+    <script>
+        const QUIZ_ID = "code001";
+        var stompClient = null;
+        const API_ROOT = "http://localhost:8081"
+        $('#quizId').text("Quiz ID: " + QUIZ_ID);
+        showCurrentTime();
+        setInterval(showCurrentTime, 1000);
+        function connect() {
+            var socket = new SockJS(API_ROOT + '/leaderboard-ws');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function (frame) {
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/topic/leaderboard/' + QUIZ_ID, function (message) {
+                    updateLeaderboard(JSON.parse(message.body));
+                });
+                // Update status
+                $('#status').removeClass('disconnected').addClass('connected').text('Connected');
+                console.log('Connected: ' + frame);
+
+                // Initial load of leaderboard
+                // loadLeaderboard();
+                updateLastSync(refreshTime());
+            });
+            stompClient.onStompError = (frame) => {
+                console.error('Broker reported error: ' + frame.headers['message']);
+                console.error('Additional details: ' + frame.body);
+                $('#status').removeClass('connected').addClass('disconnected').text('Connection Error');
+            };
+        }
+        window.onload = function () {
+            connect();
+        };
+
+
+        // Function to update the leaderboard display
+        function updateLeaderboard(leaderboardData) {
+            const tbody = $('#leaderboardBody');
+            tbody.empty();
+
+            leaderboardData.forEach((entry, index) => {
+                const row = $('<tr>').append(
+                    $('<td>').text(index + 1),
+                    $('<td>').text(entry.userName),
+                    $('<td>').text(entry.score),
+                );
+                tbody.append(row);
+            });
+            updateLastSync(refreshTime());
+        }
+
+        // Function to load initial leaderboard data
+        // function loadLeaderboard() {
+        //     $.get(API_ROOT + '/leaderboard/' + QUIZ_ID, function (data) {
+        //         updateLeaderboard(data);
+        //     });
+        // }
+
+        function loadLeaderboard() {
+            $.ajax({
+                url: API_ROOT + '/leaderboard/' + QUIZ_ID,
+                type: 'GET',
+                dataType: 'json', // Expect JSON response
+                host: API_ROOT,
+                success: function (data) {
+                    if (data && data.result) {  // Check if data and result property exist
+                        updateLeaderboard(data.result);
+                    } else if (data && data.errorCode) {
+                        console.error("Error loading leaderboard:", data.errorMessage); // Handle errors if the backend provides error information
+                        // ... display error message to the user if needed ...
+                        updateLeaderboard([]); // Show empty list or handle as needed
+                    } else {
+                        console.error("Unexpected response format:", data);
+                        updateLeaderboard([]); // Show empty list or handle as needed
+
+                    }
+
+                },
+
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error("Error loading leaderboard:", textStatus, errorThrown);
+                    // ... handle the error (e.g., display an error message)
+                    updateLeaderboard([]); // Show empty list or handle as needed
+
+                }
+
+            });
+        }
+
+        function updateLastSync(updatedTime) {
+            const lastSyncSpan = document.getElementById('lastSync');
+            if (updatedTime) {
+                lastSyncSpan.textContent = refreshTime();
+            }
+            else {
+                lastSyncSpan.textContent = updatedTime;
+            }
+        }
+
+        function refreshTime() {
+            var dateString = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+            return dateString;
+        }
+
+        function showCurrentTime() {
+
+            updateTimerDisplay(refreshTime());
+        }
+
+        function updateTimerDisplay(formattedString) {
+            document.getElementById('timer').textContent = formattedString;
+        }
+        // Start the timer when the page loads (or when the quiz begins)
+
+    </script>
+</body>
+
+</html>

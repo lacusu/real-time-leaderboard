@@ -1,0 +1,40 @@
+server:
+  port: 8081
+
+spring:
+  application.name: leaderboard-service
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT:6379}
+    #    password: <your_redis_password>  # If applicable
+    lettuce:
+      pool:
+        max-active: 16 # Maximum number of active connections (adjust as needed)
+        max-idle: 8     # Maximum number of idle connections
+        min-idle: 2     # Minimum number of idle connections
+        max-wait: 10000 # Maximum time to wait for a connection (milliseconds)
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    consumer:
+      group-id: leaderboard-group
+      auto-offset-reset: earliest # Or latest
+
+application:
+  config:
+    broker-properties:
+      game-score:
+        topic: game-score-update-request
+        group: leaderboard-group
+      quiz-joint:
+        topic: quiz-joint
+        group: leaderboard-group
+    connector:
+      user-service: user-service
+    leaderboard:
+      top-number: 10
+      key-prefix: leaderboard-
+      default-expiry-time-minutes: 30 #30mins
+      leaderboard-ws-topic: /topic/leaderboard/%s
+    websocket:
+      endpoint: leaderboard-ws
+      allowed-origins: ${WS_ALLOW_ORIGINS}

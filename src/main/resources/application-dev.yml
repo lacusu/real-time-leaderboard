@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  redis:
+    host: localhost
+    port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
+application:
+  config:
+    connector:
+      user-service: https://37622d66-1f8c-48a7-a6ba-fc69b1fa6453.mock.pstmn.io
+    websocket:
+      endpoint: leaderboard-ws
+      allowed-origins: http://localhost:63342
