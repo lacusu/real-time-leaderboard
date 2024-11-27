@@ -113,5 +113,8 @@ Docker: Containerizes the microservices for consistent deployment across differe
   - **Grafana**: A visualization tool for creating dashboards and alerts based on the metrics collected by Prometheus. Provides insights into the application's performance and health.
   - **Logging Libraries (e.g., SLF4j, Logback)**: Essential for tracking application events and debugging issues.
 -  **AI Assistant**: Yeah, I am using an AI as my assistant for this challenge. It supported me to research, English assistant, resolve some technical problem which were faced while coding the challenge. one of the bootstrap thing help me to complete the task.
+
+**Improvement**
+- Persist leaderboard for kind of historical data in Database after quiz completed.
   
 ...Due to time constraints, I haven't yet included comprehensive unit tests in this implementation. However, thorough testing is a crucial part of the software development process, and I would prioritize adding unit tests, particularly for the core components like the Leaderboard Service and Quiz Service, in a production environment. This would ensure the reliability and maintainability of the code
