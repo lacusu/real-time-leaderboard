@@ -1,5 +1,7 @@
-1. **System Design Documents**:
+**System Design Documents**:
 - **Architecture Diagram**:
+![VacabularyQuiz drawio](https://github.com/user-attachments/assets/4dcada1a-d322-4ff1-a2e5-9cd561f399f6)
+
 - **Component Descriptions**:
   - **Client (Players and Admins)**:
     - Interacts with the application through a user interface (web or mobile). Players join quizzes, answer questions, and view the leaderboard. Admins create and manage quizzes.
@@ -33,61 +35,60 @@
 - **Data Flow**:
   Let's describe the data flow for two main scenarios in your real-time quiz application: Quiz Creation/Setup (Admin) and Quiz Play/Leaderboard Update (Player).
 
-**1. Quiz Creation/Setup (Admin):**
-
-**Admin Input**: The admin uses the client application (UI) to input quiz details (title, description, time limit, questions, scoring rules, etc.).
-
-**API Gateway (Setup Quiz)**: The client sends an HTTP request to the API Gateway to create/setup the quiz. The API Gateway authenticates the admin user (likely using the Identity Service) and authorize the user whether is it admin.
-
-**Quiz Service (Create Quiz)**: The API Gateway routes the request to the Quiz Service. The Quiz Service stores the quiz details in the database.
-
-**Question Service (Setup Questions)**: The Quiz Service interacts with the Question Service to:
-
-- Retrieve questions from the database if the admin selected existing questions.
-
-- Store new questions in the database if the admin created new questions. The questions might be categorized or tagged for easier retrieval.
-
-**Response to Admin:** The Quiz Service sends a success/failure response with quiz id back to the admin via the API Gateway.
-
-**2. Quiz Play/Leaderboard Update (Player):**
-
-**Player Joins Quiz**: The player uses the client application to join a quiz by an id which send out from admin user
-
-A**PI Gateway (Join Quiz)**: The client sends an HTTP request to the API Gateway to join the quiz. The API Gateway authenticates the player (using the Identity Service).
-
-**Quiz Service (Join Quiz)**: The API Gateway routes the request to the Quiz Service. The Quiz Service:
-
-- Retrieves the quiz questions (from the database or Redis cache if any).
-
-- Creates a quiz session for the player.
-
-- Sends the first question to the player.
-
-**Message Broker (Quiz Join Event)**: The Quiz Service might publish a "Quiz Join" event to the Message Broker to notify other services like leaderboard to update the player into the leaderboard
-
-**Player Answers Question**: The player submits an answer.
-
-**API Gateway (Answer Question)**: The client sends the answer to the API Gateway.
-
-**Quiz Service (Evaluate Answer)**: The API Gateway routes the request to the Quiz Service. The Quiz Service:
-
-- Evaluates the answer (checking against the correct answer).
-
-- Calculates the score by Scoring Service
-
-**Scoring Service (Evaluate Answer)**: the Quiz Service sends the answer and quiz settings (e.g., time bonuses) to the Scoring Service for score calculation. The Scoring Service returns the calculated score to the Quiz Service and produce a event to Message Broker about the score changed
-
-**Message Broker (Score Updated Event)**: The Scoring Service publishes a "Score Updated" event to the message broker, including the player's ID, quiz ID, and score.
-
-**Leaderboard Service (Consume Score Updated)**: The Leaderboard Service subscribes to the "Score Updated" topic on the Message Broker. It receives the score update and:
-
- - Updates the leaderboard data in Redis (using a Sorted Set).
-
- - Sends the updated leaderboard to connected clients via WebSockets.
- - The Leaderboard Service might call the User Service to retrieve additional user information (e.g., display names)  to display on the leaderboard.
- - The Leaderboard Service caches the user information retrieved from the User Service in Redis to avoid redundant calls to the User Service.
-
-**WebSocket (Leaderboard WS)**: The client application (through a WebSocket connection) receives the real-time leaderboard update and updates the display on the player's screen.
+  **1. Quiz Creation/Setup (Admin):**
+  
+  - **Admin Input**: The admin uses the client application (UI) to input quiz details (title, description, time limit, questions, scoring rules, etc.).
+  
+  - **API Gateway (Setup Quiz)**: The client sends an HTTP request to the API Gateway to create/setup the quiz. The API Gateway authenticates the admin user (likely using the Identity Service) and authorize the user whether is it admin.
+  
+  - **Quiz Service (Create Quiz)**: The API Gateway routes the request to the Quiz Service. The Quiz Service stores the quiz details in the database.
+  
+  - **Question Service (Setup Questions)**: The Quiz Service interacts with the Question Service to:
+  
+    - Retrieve questions from the database if the admin selected existing questions.
+    
+    - Store new questions in the database if the admin created new questions. The questions might be categorized or tagged for easier retrieval.
+    
+  - **Response to Admin:** The Quiz Service sends a success/failure response with quiz id back to the admin via the API Gateway.
+  
+  - **2. Quiz Play/Leaderboard Update (Player):**
+  
+  - **Player Joins Quiz**: The player uses the client application to join a quiz by an id which send out from admin user
+  
+  - **API Gateway (Join Quiz)**: The client sends an HTTP request to the API Gateway to join the quiz. The API Gateway authenticates the player (using the Identity Service).
+  
+  - **Quiz Service (Join Quiz)**: The API Gateway routes the request to the Quiz Service. The Quiz Service:
+  
+    - Retrieves the quiz questions (from the database or Redis cache if any).
+    
+    - Creates a quiz session for the player.
+    
+    - Sends the first question to the player.
+  
+  - **Message Broker (Quiz Join Event)**: The Quiz Service might publish a "Quiz Join" event to the Message Broker to notify other services like leaderboard to update the player into the leaderboard
+  
+  - **Player Answers Question**: The player submits an answer.
+  
+  - **API Gateway (Answer Question)**: The client sends the answer to the API Gateway.
+  
+  - **Quiz Service (Evaluate Answer)**: The API Gateway routes the request to the Quiz Service. The Quiz Service:
+  
+    - Evaluates the answer (checking against the correct answer).
+    
+    - Calculates the score by Scoring Service
+  
+  - **Scoring Service (Evaluate Answer)**: the Quiz Service sends the answer and quiz settings (e.g., time bonuses) to the Scoring Service for score calculation. The Scoring Service returns the calculated score to the Quiz Service and produce a event to Message Broker about the score changed
+  
+  - **Message Broker (Score Updated Event)**: The Scoring Service publishes a "Score Updated" event to the message broker, including the player's ID, quiz ID, and score.
+  
+  - **Leaderboard Service (Consume Score Updated)**: The Leaderboard Service subscribes to the "Score Updated" topic on the Message Broker. It receives the score update and:
+     - Updates the leaderboard data in Redis (using a Sorted Set).
+    
+     - Sends the updated leaderboard to connected clients via WebSockets.
+     - The Leaderboard Service might call the User Service to retrieve additional user information (e.g., display names)  to display on the leaderboard.
+     - The Leaderboard Service caches the user information retrieved from the User Service in Redis to avoid redundant calls to the User Service.
+  
+  - **WebSocket (Leaderboard WS)**: The client application (through a WebSocket connection) receives the real-time leaderboard update and updates the display on the player's screen.
 
 **Technology Justification**:
 - **Frontend**:
