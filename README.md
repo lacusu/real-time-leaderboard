@@ -112,3 +112,4 @@ Docker: Containerizes the microservices for consistent deployment across differe
   - **Prometheus**: A time-series database for collecting metrics from the services (e.g., API latency, error rates).
   - **Grafana**: A visualization tool for creating dashboards and alerts based on the metrics collected by Prometheus. Provides insights into the application's performance and health.
   - **Logging Libraries (e.g., SLF4j, Logback)**: Essential for tracking application events and debugging issues.
+-  **AI Assistant**: Yeah, I am using an AI as my assistant for this challenge. It supported me to research, English assistant, resolve some technical problem which were faced while coding the challenge. one of the bootstrap thing help me to complete the task.
